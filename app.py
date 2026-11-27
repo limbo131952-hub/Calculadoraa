@@ -7,10 +7,9 @@ st.set_page_config(
     page_title="Sistema de Precios y Proveedores", page_icon="🧮", layout="wide"
 )
 
-# AQUÍ PONES LOS USUARIOS Y CONTRASEÑAS DE TUS CLIENTES
 USUARIOS_AUTORIZADOS = {
     "cliente1": "ventas2026",
-    "admin": "mi_clave_secreta",
+    "admin": "clave123",
 }
 
 if "autenticado" not in st.session_state:
@@ -34,10 +33,7 @@ if not st.session_state.autenticado:
       st.session_state.usuario_actual = usuario_ingresado
       st.rerun()
     else:
-      st.error(
-          "❌ Usuario o contraseña incorrectos. Contacta al proveedor del"
-          " software."
-      )
+      st.error("❌ Usuario o contraseña incorrectos.")
   st.stop()
 
 st.title("🧮 Sistema de Precios y Base de Datos de Proveedores")
@@ -188,7 +184,7 @@ with tab2:
         st.warning(f"No se encontraron registros para '{busqueda}'.")
       else:
         resultados_ordenados = resultados.sort_values(by="Costo_Real_Total")
-        mejor = resultados_ordenados.iloc[0]
+        mejor = resultados_ordenados.iloc
 
         st.success(
             f"🏆 MEJOR OPCIÓN: **{mejor['Proveedor']}** | Costo Real:"
