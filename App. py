@@ -1,0 +1,145 @@
+import csv
+import os
+import traceback
+from datetime import datetime
+
+# Guarda el Excel en la misma carpeta exacta donde está tu archivo .py
+CARPETA_ACTUAL = os.path.dirname(os.path.abspath(__file__))
+ARCHIVO_BD = os.path.join(CARPETA_ACTUAL, "base_datos_proveedores.csv")
+
+def inicializar_bd():
+    if not os.path.exists(ARCHIVO_BD):
+        with open(ARCHIVO_BD, mode="w", newline="", encoding="utf-8-sig") as archivo:
+            escritor = csv.writer(archivo, delimiter=";")
+            escritor.writerow([
+                "Fecha", "Producto", "Proveedor", "Costo_Proveedor",
+                "Gasto_Fijo_Asignado", "Costo_Real_Total", "Margen_Pct",
+                "Ganancia_Neta_Libre", "Subtotal_Sin_IVA", "IVA_15_Pct", "PVP_Final"
+            ])
+
+def calcular_y_guardar(factor_gasto_fijo, porcentaje_gasto_fijo):
+    IVA_ECUADOR = 0.15
+    try:
+        print("\n--- INGRESAR Y GUARDAR PRODUCTO ---")
+        nombre_producto = input("1. Nombre del producto: ").strip()
+        proveedor = input("2. Nombre del PROVEEDOR: ").strip()
+        costo_proveedor = float(input("3. Costo unitario del proveedor ($): "))
+        margen_ganancia_pct = float(input("4. Porcentaje de ganancia neta deseada (% ej. 30): "))
+
+        gasto_fijo_asignado = costo_proveedor * factor_gasto_fijo
+        costo_real_unitario = costo_proveedor + gasto_fijo_asignado
+        ganancia_neta_unitaria = costo_real_unitario * (margen_ganancia_pct / 100)
+        precio_sin_iva = costo_real_unitario + ganancia_neta_unitaria
+        valor_iva = precio_sin_iva * IVA_ECUADOR
+        precio_final_publico = precio_sin_iva + valor_iva
+
+        print("\n==========================================================")
+        print(f"   FICHA DE PRECIO: {nombre_producto.upper()} ({proveedor.upper()})")
+        print("==========================================================")
+        print(f"Costo proveedor:                    ${costo_proveedor:,.2f}")
+        print(f"Gasto fijo asignado ({porcentaje_gasto_fijo:.2f}%):      ${gasto_fijo_asignado:,.2f}")
+        print(f"COSTO REAL (Punto de equilibrio):   ${costo_real_unitario:,.2f}")
+        print("----------------------------------------------------------")
+        print(f"Tu Ganancia Neta Libre ({margen_ganancia_pct:.0f}%):       ${ganancia_neta_unitaria:,.2f}")
+        print(f"Subtotal (Antes de IVA):            ${precio_sin_iva:,.2f}")
+        print(f"IVA Ecuador (15% automático):       ${valor_iva:,.2f}")
+        print("==========================================================")
+        print(f"PRECIO FINAL AL PÚBLICO (PVP):      ${precio_final_publico:,.2f}")
+        print("==========================================================")
+
+        fecha_hoy = datetime.now().strftime("%Y-%m-%d %H:%M")
+        with open(ARCHIVO_BD, mode="a", newline="", encoding="utf-8-sig") as archivo:
+            escritor = csv.writer(archivo, delimiter=";")
+            escritor.writerow([
+                fecha_hoy, nombre_producto, proveedor,
+                round(costo_proveedor, 2), round(gasto_fijo_asignado, 2),
+                round(costo_real_unitario, 2), round(margen_ganancia_pct, 2),
+                round(ganancia_neta_unitaria, 2), round(precio_sin_iva, 2),
+                round(valor_iva, 2), round(precio_final_publico, 2)
+            ])
+        print(f"[OK] Guardado en '{ARCHIVO_BD}' exitosamente.\n")
+
+    except ValueError:
+        print("\n[Error]: Ingresa solo números válidos (usa punto para decimales, ej. 12.50).\n")
+
+def comparar_proveedores():
+    if not os.path.exists(ARCHIVO_BD):
+        print("\n[Aviso]: Aún no tienes productos guardados en tu base de datos.\n")
+        return
+
+    busqueda = input("\nEscribe el nombre del producto a comparar: ").strip().lower()
+    resultados = []
+
+    with open(ARCHIVO_BD, mode="r", encoding="utf-8-sig") as archivo:
+        lector = csv.DictReader(archivo, delimiter=";")
+        for fila in lector:
+            if busqueda in fila["Producto"].lower():
+                resultados.append(fila)
+
+    if not resultados:
+        print(f"\nNo se encontraron registros para '{busqueda}'.\n")
+        return
+
+    resultados.sort(key=lambda x: float(x["Costo_Real_Total"]))
+
+    print("\n==================================================================================")
+    print(f"   COMPARATIVA DE PROVEEDORES PARA: '{busqueda.upper()}'")
+    print("==================================================================================")
+    print(f"{'PROVEEDOR':<22} | {'COSTO PROV.':<12} | {'COSTO REAL':<12} | {'GANANCIA':<10} | {'PVP FINAL':<10}")
+    print("-" * 82)
+    for r in resultados:
+        print(f"{r['Proveedor'][:21]:<22} | ${float(r['Costo_Proveedor']):<11.2f} | ${float(r['Costo_Real_Total']):<11.2f} | ${float(r['Ganancia_Neta_Libre']):<9.2f} | ${float(r['PVP_Final']):<9.2f}")
+    
+    mejor = resultados[0]
+    print("----------------------------------------------------------------------------------")
+    print(f"MEJOR OPCIÓN: '{mejor['Proveedor']}' (Costo real: ${float(mejor['Costo_Real_Total']):.2f} | PVP: ${float(mejor['PVP_Final']):.2f})")
+    print("==================================================================================\n")
+
+def iniciar_sistema():
+    inicializar_bd()
+    print("==========================================================")
+    print("   SISTEMA DE PRECIOS Y BASE DE DATOS DE PROVEEDORES")
+    print("==========================================================")
+    
+    CAPITAL_INVERTIDO = 7000.00
+    SUELDO_COLABORADORA = 400.00
+    PAGO_LUZ = 100.00
+    TRANSPORTE = 100.00
+    SUMINISTROS_OFICINA = 50.00
+
+    while True:
+        try:
+            alquiler_local = float(input("Ingresa el pago mensual de ALQUILER del local ($): "))
+            break
+        except ValueError:
+            print("[Error]: Escribe solo números (ej. 300).\n")
+
+    total_gastos_fijos = SUELDO_COLABORADORA + PAGO_LUZ + TRANSPORTE + SUMINISTROS_OFICINA + alquiler_local
+    factor_gasto_fijo = total_gastos_fijos / CAPITAL_INVERTIDO
+    porcentaje_gasto_fijo = factor_gasto_fijo * 100
+
+    while True:
+        print(f"\n[Gastos fijos: ${total_gastos_fijos:,.2f}/mes | Recargo fijo: {porcentaje_gasto_fijo:.2f}%]")
+        print("1. Calcular precio de producto y GUARDAR en Base de Datos")
+        print("2. COMPARAR proveedores de un producto guardado")
+        print("3. Salir")
+        opcion = input("Elige una opción (1, 2 o 3): ").strip()
+
+        if opcion == "1":
+            calcular_y_guardar(factor_gasto_fijo, porcentaje_gasto_fijo)
+        elif opcion == "2":
+            comparar_proveedores()
+        elif opcion == "3":
+            print("¡Éxitos en tus compras y ventas!")
+            break
+        else:
+            print("\nOpción no válida. Escribe 1, 2 o 3.")
+
+if __name__ == "__main__":
+    try:
+        iniciar_sistema()
+    except Exception:
+        print("\n[OCURRIÓ UN ERROR INESPERADO]:")
+        traceback.print_exc()
+    finally:
+        input("\nPresiona ENTER para cerrar esta ventana...")
