@@ -3,12 +3,14 @@ import io
 import pandas as pd
 import streamlit as st
 
+NOMBRE_NEGOCIO = "Novedades Tino"
+
 st.set_page_config(
-    page_title="Sistema de Precios y Proveedores", page_icon="🧮", layout="wide"
+    page_title=f"Sistema - {NOMBRE_NEGOCIO}", page_icon="🧮", layout="wide"
 )
 
 USUARIOS_AUTORIZADOS = {
-    "cliente1": "ventas2026",
+    "novedades_tino": "tino2026",
     "admin": "clave123",
 }
 
@@ -18,8 +20,8 @@ if "usuario_actual" not in st.session_state:
   st.session_state.usuario_actual = ""
 
 if not st.session_state.autenticado:
-  st.title("🔒 Iniciar Sesión")
-  st.write("Ingresa tu usuario y contraseña para acceder al sistema.")
+  st.title(f"🔒 {NOMBRE_NEGOCIO}")
+  st.subheader("Acceso al Sistema de Precios y Proveedores")
 
   usuario_ingresado = st.text_input("Usuario:").strip()
   clave_ingresada = st.text_input("Contraseña:", type="password")
@@ -36,7 +38,7 @@ if not st.session_state.autenticado:
       st.error("❌ Usuario o contraseña incorrectos.")
   st.stop()
 
-st.title("🧮 Sistema de Precios y Base de Datos de Proveedores")
+st.title(f"🧮 {NOMBRE_NEGOCIO} — Control de Precios y Proveedores")
 
 if "bd_productos" not in st.session_state:
   st.session_state.bd_productos = []
@@ -218,7 +220,7 @@ with tab3:
     st.download_button(
         label="📥 Descargar Base de Datos en Excel (.xlsx)",
         data=buffer.getvalue(),
-        file_name="base_datos_proveedores.xlsx",
+        file_name="base_datos_proveedores_novedades_tino.xlsx",
         mime=(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         ),
