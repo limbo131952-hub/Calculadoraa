@@ -8,9 +8,29 @@ st.set_page_config(
     page_title="Sistema de Precios y Proveedores", page_icon="🧮", layout="wide"
 )
 
+# --- SISTEMA DE SEGURIDAD (CONTRASEÑA) ---
+CLAVE_ACCESO = (
+    "CLIENTE2026"  # <-- Cambia esto por la clave que le darás a tu cliente
+)
+
+if "autenticado" not in st.session_state:
+  st.session_state.autenticado = False
+
+if not st.session_state.autenticado:
+  st.title("🔒 Acceso Restringido")
+  st.write("Ingresa tu licencia o clave de acceso para abrir el sistema.")
+  clave_ingresada = st.text_input("Contraseña:", type="password")
+  if st.button("Ingresar", type="primary"):
+    if clave_ingresada == CLAVE_ACCESO:
+      st.session_state.autenticado = True
+      st.rerun()
+    else:
+      st.error("❌ Contraseña incorrecta. Contacta al proveedor del software.")
+  st.stop()  # Detiene el programa aquí si no pone la clave correcta
+
+# --- APLICACIÓN PRINCIPAL (SOLO SE VE SI PONE LA CLAVE) ---
 st.title("🧮 Sistema de Precios y Base de Datos de Proveedores")
 
-# Inicializar memoria de productos guardados
 if "bd_productos" not in st.session_state:
   st.session_state.bd_productos = []
 
@@ -35,7 +55,6 @@ suministros = st.sidebar.number_input(
     "Suministros de Oficina ($/mes)", min_value=0.0, value=50.0, step=5.0
 )
 
-# Cálculos exactos de tu fórmula original
 total_gastos_fijos = (
     sueldo_colaboradora
     + pago_luz
@@ -52,6 +71,10 @@ st.sidebar.info(
     f" por Producto:** {porcentaje_gasto_fijo:.2f}%"
 )
 
+if st.sidebar.button("Cerrar Sesión"):
+  st.session_state.autenticado = False
+  st.rerun()
+
 # --- PESTAÑAS PRINCIPALES ---
 tab1, tab2, tab3 = st.tabs([
     "➕ Calcular y Guardar",
@@ -59,7 +82,6 @@ tab1, tab2, tab3 = st.tabs([
     "📥 Base de Datos (Excel)",
 ])
 
-# PESTAÑA 1: CALCULAR Y GUARDAR
 with tab1:
   st.subheader("Ingresar y Guardar Producto")
   col1, col2 = st.columns(2)
@@ -96,7 +118,6 @@ with tab1:
       valor_iva = precio_sin_iva * IVA_ECUADOR
       precio_final_publico = precio_sin_iva + valor_iva
 
-      # Mostrar Ficha de Precio Visual
       st.success(
           f"✅ FICHA DE PRECIO: {nombre_producto.upper()}"
           f" ({proveedor.upper()})"
@@ -119,7 +140,6 @@ with tab1:
         st.write(f"- **Subtotal (Antes de IVA):** ${precio_sin_iva:,.2f}")
         st.write(f"- **IVA Ecuador (15%):** ${valor_iva:,.2f}")
 
-      # Guardar en la base de datos de la sesión
       fecha_hoy = datetime.now().strftime("%Y-%m-%d %H:%M")
       st.session_state.bd_productos.append({
           "Fecha": fecha_hoy,
@@ -135,7 +155,6 @@ with tab1:
           "PVP_Final": round(precio_final_publico, 2),
       })
 
-# PESTAÑA 2: COMPARAR PROVEEDORES
 with tab2:
   st.subheader("Comparativa de Proveedores")
   if not st.session_state.bd_productos:
@@ -176,7 +195,6 @@ with tab2:
             use_container_width=True,
         )
 
-# PESTAÑA 3: BASE DE DATOS Y DESCARGA EXCEL
 with tab3:
   st.subheader("Historial Completo de Proveedores")
   if not st.session_state.bd_productos:
@@ -185,7 +203,6 @@ with tab3:
     df_bd = pd.DataFrame(st.session_state.bd_productos)
     st.dataframe(df_bd, use_container_width=True)
 
-    # Generar archivo Excel real (.xlsx) para descargar
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
       df_bd.to_excel(writer, index=False, sheet_name="Proveedores")
