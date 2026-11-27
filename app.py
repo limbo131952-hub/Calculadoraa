@@ -3,38 +3,55 @@ import io
 import pandas as pd
 import streamlit as st
 
-# Configuración de la página
 st.set_page_config(
     page_title="Sistema de Precios y Proveedores", page_icon="🧮", layout="wide"
 )
 
-# --- SISTEMA DE SEGURIDAD (CONTRASEÑA) ---
-CLAVE_ACCESO = (
-    "CLIENTE2026"  # <-- Cambia esto por la clave que le darás a tu cliente
-)
+# AQUÍ PONES LOS USUARIOS Y CONTRASEÑAS DE TUS CLIENTES
+USUARIOS_AUTORIZADOS = {
+    "cliente1": "ventas2026",
+    "admin": "mi_clave_secreta",
+}
 
 if "autenticado" not in st.session_state:
   st.session_state.autenticado = False
+if "usuario_actual" not in st.session_state:
+  st.session_state.usuario_actual = ""
 
 if not st.session_state.autenticado:
-  st.title("🔒 Acceso Restringido")
-  st.write("Ingresa tu licencia o clave de acceso para abrir el sistema.")
+  st.title("🔒 Iniciar Sesión")
+  st.write("Ingresa tu usuario y contraseña para acceder al sistema.")
+
+  usuario_ingresado = st.text_input("Usuario:").strip()
   clave_ingresada = st.text_input("Contraseña:", type="password")
-  if st.button("Ingresar", type="primary"):
-    if clave_ingresada == CLAVE_ACCESO:
+
+  if st.button("Entrar al Sistema", type="primary"):
+    if (
+        usuario_ingresado in USUARIOS_AUTORIZADOS
+        and USUARIOS_AUTORIZADOS[usuario_ingresado] == clave_ingresada
+    ):
       st.session_state.autenticado = True
+      st.session_state.usuario_actual = usuario_ingresado
       st.rerun()
     else:
-      st.error("❌ Contraseña incorrecta. Contacta al proveedor del software.")
-  st.stop()  # Detiene el programa aquí si no pone la clave correcta
+      st.error(
+          "❌ Usuario o contraseña incorrectos. Contacta al proveedor del"
+          " software."
+      )
+  st.stop()
 
-# --- APLICACIÓN PRINCIPAL (SOLO SE VE SI PONE LA CLAVE) ---
 st.title("🧮 Sistema de Precios y Base de Datos de Proveedores")
 
 if "bd_productos" not in st.session_state:
   st.session_state.bd_productos = []
 
-# --- BARRA LATERAL: CONFIGURACIÓN DE CAPITAL Y GASTOS FIJOS ---
+st.sidebar.header(f"👤 Usuario: {st.session_state.usuario_actual}")
+if st.sidebar.button("Cerrar Sesión"):
+  st.session_state.autenticado = False
+  st.session_state.usuario_actual = ""
+  st.rerun()
+
+st.sidebar.markdown("---")
 st.sidebar.header("⚙️ Gastos Fijos y Capital")
 capital_invertido = st.sidebar.number_input(
     "Capital Invertido ($)", min_value=1.0, value=7000.0, step=100.0
@@ -71,11 +88,6 @@ st.sidebar.info(
     f" por Producto:** {porcentaje_gasto_fijo:.2f}%"
 )
 
-if st.sidebar.button("Cerrar Sesión"):
-  st.session_state.autenticado = False
-  st.rerun()
-
-# --- PESTAÑAS PRINCIPALES ---
 tab1, tab2, tab3 = st.tabs([
     "➕ Calcular y Guardar",
     "🔍 Comparar Proveedores",
